@@ -195,9 +195,11 @@ def process_transcript(
 
     merged = "\n\n".join(corrected_parts)
 
-    if do_merge and len(merged) <= MERGE_MAX_CHARS:
+    if do_merge and len(spans) > 1 and len(merged) <= MERGE_MAX_CHARS:
         print("  Running merge pass...", file=sys.stderr)
         merged = merge_sections(client, model, merged)
+    elif do_merge and len(spans) == 1:
+        pass  # Single chunk: nothing to merge across boundaries.
     elif do_merge and len(merged) > MERGE_MAX_CHARS:
         print(
             f"  Skipping merge pass (length {len(merged)} > limit {MERGE_MAX_CHARS}).",
