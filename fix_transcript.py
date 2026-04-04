@@ -7,8 +7,9 @@ then runs an optional merge pass to smooth section boundaries.
 
 Usage:
     python fix_transcript.py episode.txt
-    python fix_transcript.py episode.txt -o corrected.txt
-    python fix_transcript.py episode.txt --model gemini-2.5-flash --chunk-size 12000
+    # writes output_data/episode-fixed.txt by default
+    python fix_transcript.py episode.txt -o custom/path.txt
+    python fix_transcript.py episode.txt -o -   # stdout
 """
 
 from __future__ import annotations
@@ -22,6 +23,9 @@ from google import genai
 from google.genai import types
 
 load_dotenv()
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+OUTPUT_DATA_DIR = SCRIPT_DIR / "output_data"
 
 DEFAULT_MODEL = "gemini-2.5-flash"
 DEFAULT_CHUNK_SIZE = 10_000
@@ -223,7 +227,10 @@ def main() -> None:
         "--output",
         type=Path,
         default=None,
-        help="Write result here instead of stdout",
+        help=(
+            "Output file path, or '-' for stdout. "
+            f"Default: {OUTPUT_DATA_DIR.name}/<input-stem>-fixed.txt"
+        ),
     )
     parser.add_argument(
         "--model",
@@ -267,13 +274,20 @@ def main() -> None:
         do_merge=not args.no_merge,
     )
 
-    if args.output:
-        args.output.write_text(result + ("\n" if result and not result.endswith("\n") else ""), encoding="utf-8")
-        print(f"Wrote {args.output}", file=sys.stderr)
-    else:
+    if args.output is not None and str(args.output) == "-":
         sys.stdout.write(result)
         if result and not result.endswith("\n"):
             sys.stdout.write("\n")
+    else:
+        if args.output is not None:
+            out_path = args.output
+        else:
+            OUTPUT_DATA_DIR.mkdir(parents=True, exist_ok=True)
+            out_path = OUTPUT_DATA_DIR / f"{path.stem}-fixed.txt"
+        text = result + ("\n" if result and not result.endswith("\n") else "")
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(text, encoding="utf-8")
+        print(f"Wrote {out_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":
