@@ -163,7 +163,9 @@ The script creates the `output_data` folder automatically if needed.
 | `-o -` | Print the result to the terminal (stdout) instead of a file. |
 | `--no-merge` | Skip the final “smooth the joins between chunks” step (faster, sometimes rougher on very long files). |
 | `--chunk-size 12000` | Use larger chunks (default is 10000 characters). Rarely needed. |
-| `--model gemini-2.5-flash` | Explicitly set the model (this is already the default). |
+| `--model <id>` | Set the Gemini model (default `gemini-2.5-flash`). Other common ids: `gemini-2.5-flash-lite`, `gemini-2.0-flash`, `gemini-1.5-flash`. |
+| `--auto-fallback` | If the API keeps returning temporary overload errors (503), automatically try other models in a built-in order. |
+| `--no-interactive` | Never ask questions in the terminal; on overload, print help and exit unless `--auto-fallback` can switch models. |
 
 Full help:
 
@@ -181,7 +183,17 @@ python fix_transcript.py --help
 | `python` / `python3` not found | Install Python from [python.org](https://www.python.org/downloads/) and restart the terminal. On Windows, try `py` instead of `python`. |
 | `pip install` errors | Upgrade pip: `python -m pip install --upgrade pip`, then run `pip install -r requirements.txt` again. |
 | Permission / API errors from Google | Check the key in AI Studio, billing/quota messages on Google’s side, and that the network allows HTTPS. |
+| **`503 UNAVAILABLE` / “high demand”** | Google’s servers are busy or your free-tier quota for that model is momentarily used up. The script **retries** a few times, then can **switch models** (see below). You do **not** need to open the README—read the message printed in the terminal. |
 | Very long episodes | The script already splits long text into pieces. If something fails, try `--no-merge` or a smaller `--chunk-size`. |
+
+### Service busy (503) or overloaded
+
+1. **Wait 2–15 minutes** and run the **same command** again. Demand spikes are often short.
+2. **Pick another model**, for example `--model gemini-2.5-flash-lite` or `--model gemini-2.0-flash`.
+3. Or run with **`--auto-fallback`** so the script tries other models automatically without prompts.
+4. In scripts or CI where no one can answer a prompt, use **`--no-interactive`** together with **`--auto-fallback`** if you want automatic model switching.
+
+If you run the tool **interactively** in a normal terminal, it may **ask which model to try next** and show exact model ids you can paste into `--model` later.
 
 ---
 
